@@ -252,7 +252,7 @@ munit_errorf_ex(const char* filename, int line, const char* format, ...) {
 
 static void
 munit_log_errno(MunitLogLevel level, FILE* fp, const char* msg) {
-#if defined(MUNIT_NO_STRERROR_R) || (defined(__MINGW32__) && !defined(MINGW_HAS_SECURE_API))
+#if defined(MUNIT_NO_STRERROR_R) || (defined(__MINGW32__) && !defined(MINGW_HAS_SECURE_API)) || (defined(_MSC_VER) && _MSC_VER < 1400)
   munit_logf_internal(level, fp, "%s: %s (%d)", msg, strerror(errno), errno);
 #else
   char munit_error_str[MUNIT_STRERROR_LEN];
@@ -511,7 +511,7 @@ struct PsnipClockTimespec {
 
 /*** Implementations ***/
 
-#define PSNIP_CLOCK_NSEC_PER_SEC ((psnip_uint32_t) (1000000000ULL))
+#define PSNIP_CLOCK_NSEC_PER_SEC ((psnip_uint32_t) (1000000000UL))
 
 #if \
   (defined(PSNIP_CLOCK_CPU_METHOD)       && (PSNIP_CLOCK_CPU_METHOD       == PSNIP_CLOCK_METHOD_CLOCK_GETTIME)) || \
@@ -1327,7 +1327,7 @@ munit_test_runner_run_test_with_params(MunitTestRunner* runner, const MunitTest*
   fflush(MUNIT_OUTPUT_FILE);
 
   stderr_buf = NULL;
-#if !defined(_WIN32) || defined(__MINGW32__)
+#if !defined(_WIN32) || defined(__MINGW32__) || (defined(_MSC_VER) && _MSC_VER < 1400)
   stderr_buf = tmpfile();
 #else
   tmpfile_s(&stderr_buf);
@@ -1820,7 +1820,7 @@ munit_stream_supports_ansi(FILE *stream) {
 #endif
 
   if (isatty(fileno(stream))) {
-#if !defined(__MINGW32__)
+#if !defined(__MINGW32__) && (!defined(_MSC_VER) || _MSC_VER >= 1400)
     getenv_s(&ansicon_size, NULL, 0, "ANSICON");
     return ansicon_size != 0;
 #else
@@ -1844,7 +1844,7 @@ munit_suite_main_custom(const MunitSuite* suite, void* user_data,
   char* envptr;
   unsigned long ts;
   char* endptr;
-  unsigned long long iterations;
+  unsigned long iterations;
   MunitLogLevel level;
   const MunitArgument* argument;
   const char** runner_tests;
